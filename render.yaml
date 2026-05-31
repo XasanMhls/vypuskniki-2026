@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: vypuskniki-2026
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm run install-all && npm run build
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        value: mongodb+srv://rustammhls2000_db_user:Xasan2900@cluster0.eyubzmv.mongodb.net/graduates11?appName=Cluster0
+      - key: JWT_SECRET
+        value: super-secret-graduates-2026-jwt-key
+      - key: PORT
+        value: 10000

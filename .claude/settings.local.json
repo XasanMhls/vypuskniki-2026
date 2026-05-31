@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node server/index.js)",
+      "Bash(echo \"Server PID: $!\")",
+      "Bash(curl -s http://localhost:5174/api/health)",
+      "Bash(curl -s http://localhost:5173)"
+    ]
+  }
+}
