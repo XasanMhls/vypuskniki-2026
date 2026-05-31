@@ -42,6 +42,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// Health check (no DB needed)
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
 // Ensure DB is connected before every request (cached — essentially free after first call)
 app.use(async (_req, _res, next) => {
   try {
@@ -61,8 +64,6 @@ app.use('/api/awards',  awardRoutes);
 app.use('/api/events',  eventRoutes);
 app.use('/api/admin',   adminRoutes);
 app.use('/api/upload',  uploadRoutes);
-
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
 // Serve React build in production (Render / local prod)
 if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
