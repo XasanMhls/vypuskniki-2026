@@ -14,6 +14,8 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "VERCEL": "1"
+    "VERCEL": "1",
+    "MONGODB_URI": "mongodb+srv://rustammhls2000_db_user:Xasan2900@cluster0.eyubzmv.mongodb.net/graduates11?appName=Cluster0",
+    "JWT_SECRET": "super-secret-graduates-2026-jwt-key"
   }
 }
