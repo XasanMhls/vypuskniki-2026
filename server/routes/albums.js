@@ -7,10 +7,15 @@ const router = Router();
 // All routes require authentication
 router.use(auth);
 
-// GET /api/albums — all albums
+// GET /api/albums — albums visible to current user
 router.get('/', async (req, res) => {
   try {
-    const albums = await Album.find()
+    const albums = await Album.find({
+      $or: [
+        { isPublic: true },
+        { createdBy: req.user.id },
+      ],
+    })
       .populate('createdBy', 'name avatar')
       .sort({ createdAt: -1 });
     res.json(albums);
@@ -22,7 +27,7 @@ router.get('/', async (req, res) => {
 // POST /api/albums — create album
 router.post('/', async (req, res) => {
   try {
-    const { title, description, coverImage } = req.body;
+    const { title, description, coverImage, isPublic } = req.body;
 
     if (!title) {
       return res.status(400).json({ message: 'Название альбома обязательно' });
@@ -33,6 +38,7 @@ router.post('/', async (req, res) => {
       description: description || '',
       coverImage: coverImage || '',
       createdBy: req.user.id,
+      isPublic: isPublic !== undefined ? isPublic : true,
     });
 
     await album.populate('createdBy', 'name avatar');
@@ -51,6 +57,13 @@ router.get('/:id', async (req, res) => {
 
     if (!album) {
       return res.status(404).json({ message: 'Альбом не найден' });
+    }
+
+    // Check access: public or creator/admin
+    const isCreator = album.createdBy._id.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    if (!album.isPublic && !isCreator && !isAdmin) {
+      return res.status(403).json({ message: 'Этот альбом приватный' });
     }
 
     res.json(album);
@@ -72,10 +85,11 @@ router.put('/:id', async (req, res) => {
       return res.status(403).json({ message: 'Нет прав для редактирования этого альбома' });
     }
 
-    const { title, description, coverImage } = req.body;
+    const { title, description, coverImage, isPublic } = req.body;
     if (title !== undefined) album.title = title;
     if (description !== undefined) album.description = description;
     if (coverImage !== undefined) album.coverImage = coverImage;
+    if (isPublic !== undefined) album.isPublic = isPublic;
 
     await album.save();
     await album.populate('createdBy', 'name avatar');
@@ -83,6 +97,24 @@ router.put('/:id', async (req, res) => {
     res.json(album);
   } catch (error) {
     res.status(500).json({ message: 'Ошибка при обновлении альбома' });
+  }
+});
+
+// PATCH /api/albums/:id/privacy — toggle public/private
+router.patch('/:id/privacy', async (req, res) => {
+  try {
+    const album = await Album.findById(req.params.id);
+    if (!album) return res.status(404).json({ message: 'Альбом не найден' });
+
+    if (album.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Нет прав' });
+    }
+
+    album.isPublic = !album.isPublic;
+    await album.save();
+    res.json({ isPublic: album.isPublic });
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка при изменении видимости' });
   }
 });
 
@@ -106,7 +138,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// POST /api/albums/:id/photos — add photo
+// POST /api/albums/:id/photos — add photo/video (any authenticated user)
 router.post('/:id/photos', async (req, res) => {
   try {
     const album = await Album.findById(req.params.id);
@@ -118,7 +150,7 @@ router.post('/:id/photos', async (req, res) => {
     const { url, caption } = req.body;
 
     if (!url) {
-      return res.status(400).json({ message: 'URL фотографии обязателен' });
+      return res.status(400).json({ message: 'URL медиафайла обязателен' });
     }
 
     album.photos.push({
@@ -133,11 +165,11 @@ router.post('/:id/photos', async (req, res) => {
 
     res.status(201).json(album);
   } catch (error) {
-    res.status(500).json({ message: 'Ошибка при добавлении фотографии' });
+    res.status(500).json({ message: 'Ошибка при добавлении медиафайла' });
   }
 });
 
-// DELETE /api/albums/:id/photos/:photoId — remove photo
+// DELETE /api/albums/:id/photos/:photoId — remove photo/video
 router.delete('/:id/photos/:photoId', async (req, res) => {
   try {
     const album = await Album.findById(req.params.id);
@@ -149,11 +181,15 @@ router.delete('/:id/photos/:photoId', async (req, res) => {
     const photo = album.photos.id(req.params.photoId);
 
     if (!photo) {
-      return res.status(404).json({ message: 'Фотография не найдена' });
+      return res.status(404).json({ message: 'Медиафайл не найден' });
     }
 
-    if (photo.uploadedBy.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Нет прав для удаления этой фотографии' });
+    const isUploader = photo.uploadedBy?.toString() === req.user.id;
+    const isCreator = album.createdBy.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isUploader && !isCreator && !isAdmin) {
+      return res.status(403).json({ message: 'Нет прав для удаления этого медиафайла' });
     }
 
     album.photos.pull({ _id: req.params.photoId });
@@ -164,7 +200,7 @@ router.delete('/:id/photos/:photoId', async (req, res) => {
 
     res.json(album);
   } catch (error) {
-    res.status(500).json({ message: 'Ошибка при удалении фотографии' });
+    res.status(500).json({ message: 'Ошибка при удалении медиафайла' });
   }
 });
 

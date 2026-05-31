@@ -18,6 +18,7 @@ const albumSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    isPublic: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
