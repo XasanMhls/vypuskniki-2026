@@ -13,6 +13,17 @@ const navLinks = [
   { to: '/timeline',   label: 'Хроника'    },
 ];
 
+/* ─── Use mobile detection ────────────────────────────────── */
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener('resize', handler, { passive: true });
+    return () => window.removeEventListener('resize', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 /* ─── 3D Nav Link ─────────────────────────────────────────── */
 function NavLink3D({ to, label, active }) {
   const x = useMotionValue(0);
@@ -33,39 +44,30 @@ function NavLink3D({ to, label, active }) {
         <Link
           to={to}
           style={{
-            display: 'block',
-            position: 'relative',
-            padding: '8px 18px',
+            display: 'block', position: 'relative',
+            padding: '8px 14px',
             fontFamily: '"Jost", sans-serif',
             fontWeight: active ? 600 : 400,
-            fontSize: '0.8rem',
-            letterSpacing: '0.07em',
+            fontSize: '0.8rem', letterSpacing: '0.07em',
             color: active ? '#C9A555' : '#6B6570',
-            textDecoration: 'none',
-            transition: 'color 0.2s',
+            textDecoration: 'none', transition: 'color 0.2s',
             whiteSpace: 'nowrap',
           }}
           onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#EDE0C4'; }}
-          onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#6B6570'; }}
+          onMouseLeave={e => { if (!active) e.currentTarget.style.color = active ? '#C9A555' : '#6B6570'; }}
         >
-          {/* active underline */}
           {active && (
-            <motion.div
-              layoutId="navUnderline"
-              style={{ position: 'absolute', bottom: 4, left: 18, right: 18, height: 1, background: 'linear-gradient(to right, transparent, #C9A555, transparent)' }}
+            <motion.div layoutId="navUnderline"
+              style={{ position: 'absolute', bottom: 4, left: 14, right: 14, height: 1, background: 'linear-gradient(to right, transparent, #C9A555, transparent)' }}
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
           )}
-          {/* hover glow chip */}
-          <motion.div
-            style={{
-              position: 'absolute', inset: 0, borderRadius: 8,
-              background: active ? 'rgba(201,165,85,0.07)' : 'transparent',
-              border: active ? '1px solid rgba(201,165,85,0.12)' : '1px solid transparent',
-              transition: 'all 0.2s',
-              transform: 'translateZ(-4px)',
-            }}
-          />
+          <motion.div style={{
+            position: 'absolute', inset: 0, borderRadius: 8,
+            background: active ? 'rgba(201,165,85,0.07)' : 'transparent',
+            border: active ? '1px solid rgba(201,165,85,0.12)' : '1px solid transparent',
+            transition: 'all 0.2s', transform: 'translateZ(-4px)',
+          }} />
           <span style={{ position: 'relative', transform: 'translateZ(4px)', display: 'block' }}>
             {label}
           </span>
@@ -79,10 +81,7 @@ function NavLink3D({ to, label, active }) {
 function DropItem({ as: Tag = 'div', children, danger, ...props }) {
   const [hov, setHov] = useState(false);
   return (
-    <motion.div
-      whileHover={{ x: 3 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-    >
+    <motion.div whileHover={{ x: 3 }} transition={{ type: 'spring', stiffness: 400, damping: 28 }}>
       <Tag
         {...props}
         style={{
@@ -108,6 +107,7 @@ function DropItem({ as: Tag = 'div', children, danger, ...props }) {
 export default function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile(900);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -130,125 +130,105 @@ export default function Navbar() {
 
   useEffect(() => { setMobileOpen(false); setDropdownOpen(false); }, [location.pathname]);
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
   const getInitials = (name = '') =>
     name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+
+  const allLinks = [
+    ...navLinks,
+    ...(user?.role === 'admin' ? [{ to: '/admin', label: 'Админ' }] : []),
+  ];
 
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-      background: scrolled ? 'rgba(7,7,12,0.97)' : 'rgba(7,7,12,0.8)',
-      backdropFilter: 'blur(24px)',
-      WebkitBackdropFilter: 'blur(24px)',
+      background: scrolled ? 'rgba(7,7,12,0.97)' : 'rgba(7,7,12,0.85)',
+      backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
       borderBottom: '1px solid rgba(201,165,85,0.1)',
       transition: 'background 0.4s ease',
     }}>
-      {/* Gold hairline top */}
+      {/* Gold hairline */}
       <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(201,165,85,0.45), transparent)' }} />
 
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72 }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
 
           {/* Logo */}
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
             <motion.div
-              style={{ height: 1, width: 24, background: 'linear-gradient(to right, #C9A555, rgba(201,165,85,0.3))' }}
-              whileHover={{ width: 40 }}
-              transition={{ duration: 0.3 }}
+              style={{ height: 1, width: 20, background: 'linear-gradient(to right, #C9A555, rgba(201,165,85,0.3))' }}
+              whileHover={{ width: 36 }} transition={{ duration: 0.3 }}
             />
-            <span style={{
-              fontFamily: '"Jost", sans-serif', fontWeight: 700,
-              fontSize: '0.68rem', letterSpacing: '0.3em',
-              textTransform: 'uppercase', color: '#C9A555',
-            }}>
-              Выпуск 2025–2026
+            <span style={{ fontFamily: '"Jost", sans-serif', fontWeight: 700, fontSize: '0.62rem', letterSpacing: '0.28em', textTransform: 'uppercase', color: '#C9A555' }}>
+              {isMobile ? '11 Г · 2026' : 'Выпуск 2025–2026'}
             </span>
           </Link>
 
-          {/* Desktop Nav Links — center */}
-          {user && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, justifyContent: 'center' }}
-              className="hidden md:flex">
-              {navLinks.map(link => (
+          {/* Desktop nav links */}
+          {user && !isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, justifyContent: 'center' }}>
+              {allLinks.map(link => (
                 <NavLink3D key={link.to} to={link.to} label={link.label} active={isActive(link.to)} />
               ))}
-              {user.role === 'admin' && (
-                <NavLink3D to="/admin" label="Админ" active={isActive('/admin')} />
-              )}
             </div>
           )}
 
           {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 
             {/* Desktop avatar dropdown */}
-            {user && (
-              <div ref={dropdownRef} style={{ position: 'relative' }} className="hidden md:block">
+            {user && !isMobile && (
+              <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <motion.button
                   onClick={() => setDropdownOpen(v => !v)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 14px 8px 8px',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '7px 12px 7px 7px',
                     background: dropdownOpen ? 'rgba(201,165,85,0.08)' : 'rgba(255,255,255,0.03)',
                     border: `1px solid ${dropdownOpen ? 'rgba(201,165,85,0.25)' : 'rgba(201,165,85,0.1)'}`,
-                    borderRadius: 40,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    borderRadius: 40, cursor: 'pointer', transition: 'all 0.2s',
                   }}
                 >
-                  {/* Avatar */}
                   <div style={{ padding: 1.5, background: 'linear-gradient(135deg, #C9A555, #836030)', borderRadius: '50%', flexShrink: 0 }}>
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '1.5px solid #07070C' }} />
-                    ) : (
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #0F0F18, #1A1A28)', border: '1.5px solid #07070C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Jost", sans-serif', fontSize: '0.6rem', fontWeight: 700, color: '#C9A555' }}>
-                        {getInitials(user.name)}
-                      </div>
-                    )}
+                    {user.avatar
+                      ? <img src={user.avatar} alt={user.name} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', display: 'block', border: '1.5px solid #07070C' }} />
+                      : <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #0F0F18, #1A1A28)', border: '1.5px solid #07070C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Jost", sans-serif', fontSize: '0.58rem', fontWeight: 700, color: '#C9A555' }}>{getInitials(user.name)}</div>
+                    }
                   </div>
-                  <span style={{ fontFamily: '"Jost", sans-serif', fontWeight: 400, fontSize: '0.8rem', color: '#EDE0C4', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontFamily: '"Jost", sans-serif', fontWeight: 400, fontSize: '0.78rem', color: '#EDE0C4', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.name}
                   </span>
                   <motion.span animate={{ rotate: dropdownOpen ? 180 : 0 }} transition={{ duration: 0.22 }}>
-                    <FiChevronDown size={13} color="#6B6570" />
+                    <FiChevronDown size={12} color="#6B6570" />
                   </motion.span>
                 </motion.button>
 
                 <AnimatePresence>
                   {dropdownOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.96, rotateX: -8 }}
-                      animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.96, rotateX: -8 }}
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
                       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
                       style={{
                         position: 'absolute', right: 0, top: 'calc(100% + 10px)',
-                        width: 220, overflow: 'hidden',
-                        background: 'rgba(10,10,18,0.97)',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(201,165,85,0.15)',
-                        borderRadius: 14,
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,165,85,0.05)',
+                        width: 210, overflow: 'hidden',
+                        background: 'rgba(10,10,18,0.97)', backdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(201,165,85,0.15)', borderRadius: 14,
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
                         transformOrigin: 'top right',
                       }}
                     >
-                      {/* top gold shimmer */}
                       <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(201,165,85,0.4), transparent)' }} />
-                      {/* user info */}
-                      <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(201,165,85,0.08)' }}>
-                        <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 600, fontSize: '0.85rem', color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{user.name}</p>
-                        <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 300, fontSize: '0.72rem', color: '#3A3840', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{user.email}</p>
+                      <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(201,165,85,0.08)' }}>
+                        <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 600, fontSize: '0.82rem', color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{user.name}</p>
+                        <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 300, fontSize: '0.7rem', color: '#3A3840', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{user.email}</p>
                       </div>
                       <div style={{ padding: '6px 0' }}>
-                        <DropItem as={Link} to="/settings">
-                          <FiUser size={13} /> Мой профиль
-                        </DropItem>
+                        <DropItem as={Link} to="/settings"><FiUser size={13} /> Мой профиль</DropItem>
                         <div style={{ height: 1, background: 'rgba(201,165,85,0.06)', margin: '4px 0' }} />
-                        <DropItem as="button" onClick={logout} danger>
-                          <FiLogOut size={13} /> Выйти
-                        </DropItem>
+                        <DropItem as="button" onClick={logout} danger><FiLogOut size={13} /> Выйти</DropItem>
                       </div>
                     </motion.div>
                   )}
@@ -257,27 +237,24 @@ export default function Navbar() {
             )}
 
             {/* Mobile hamburger */}
-            {user && (
+            {user && isMobile && (
               <motion.button
                 onClick={() => setMobileOpen(v => !v)}
                 whileTap={{ scale: 0.92 }}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 38, height: 38,
-                  border: '1px solid rgba(201,165,85,0.15)',
-                  borderRadius: 10,
-                  color: '#6B6570', cursor: 'pointer',
+                  width: 40, height: 40,
+                  border: `1px solid ${mobileOpen ? 'rgba(201,165,85,0.35)' : 'rgba(201,165,85,0.18)'}`,
+                  borderRadius: 10, color: mobileOpen ? '#C9A555' : '#6B6570',
+                  cursor: 'pointer',
                   background: mobileOpen ? 'rgba(201,165,85,0.08)' : 'transparent',
                   transition: 'all 0.2s',
                 }}
-                className="md:hidden"
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,165,85,0.35)'; e.currentTarget.style.color = '#EDE0C4'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,165,85,0.15)'; e.currentTarget.style.color = '#6B6570'; }}
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {mobileOpen
-                    ? <motion.div key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.14 }}><FiX size={18} /></motion.div>
-                    : <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.14 }}><FiMenu size={18} /></motion.div>
+                    ? <motion.div key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.14 }}><FiX size={19} /></motion.div>
+                    : <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.14 }}><FiMenu size={19} /></motion.div>
                   }
                 </AnimatePresence>
               </motion.button>
@@ -286,9 +263,9 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* ── Mobile drawer ── */}
       <AnimatePresence>
-        {mobileOpen && user && (
+        {mobileOpen && isMobile && user && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -296,62 +273,58 @@ export default function Navbar() {
             transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
             style={{ overflow: 'hidden', background: 'rgba(7,7,12,0.99)', borderTop: '1px solid rgba(201,165,85,0.1)' }}
           >
-            <div style={{ padding: '12px 16px 20px' }}>
-              {/* Links */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 8 }}>
-                {navLinks.map((link, i) => (
+            <div style={{ padding: '10px 12px 16px' }}>
+
+              {/* User info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px 14px', borderBottom: '1px solid rgba(201,165,85,0.08)', marginBottom: 8 }}>
+                <div style={{ padding: 2, background: 'linear-gradient(135deg, #C9A555, #836030)', borderRadius: '50%', flexShrink: 0 }}>
+                  {user.avatar
+                    ? <img src={user.avatar} alt={user.name} style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '2px solid #07070C', display: 'block' }} />
+                    : <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg, #0F0F18, #1A1A28)', border: '2px solid #07070C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Jost"', fontSize: '0.7rem', fontWeight: 700, color: '#C9A555' }}>{getInitials(user.name)}</div>
+                  }
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 600, fontSize: '0.88rem', color: '#EDE0C4', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</p>
+                  <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 300, fontSize: '0.7rem', color: '#3A3840', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                </div>
+              </div>
+
+              {/* Nav links */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {allLinks.map((link, i) => (
                   <motion.div
                     key={link.to}
                     initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.04, duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ delay: i * 0.035, duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <Link
                       to={link.to}
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '12px 16px', borderRadius: 10,
+                        padding: '13px 16px', borderRadius: 10,
                         fontFamily: '"Jost", sans-serif',
                         fontWeight: isActive(link.to) ? 600 : 400,
-                        fontSize: '0.9rem', letterSpacing: '0.05em',
+                        fontSize: '0.92rem', letterSpacing: '0.04em',
                         color: isActive(link.to) ? '#C9A555' : '#6B6570',
                         background: isActive(link.to) ? 'rgba(201,165,85,0.07)' : 'transparent',
                         borderLeft: isActive(link.to) ? '2px solid rgba(201,165,85,0.5)' : '2px solid transparent',
                         textDecoration: 'none', transition: 'all 0.15s',
                       }}
                     >
-                      {link.label}
-                      {isActive(link.to) && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#C9A555' }} />}
+                      <span>{link.label}</span>
+                      {isActive(link.to) && <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#C9A555', flexShrink: 0 }} />}
                     </Link>
                   </motion.div>
                 ))}
-                {user.role === 'admin' && (
-                  <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: navLinks.length * 0.04, duration: 0.22 }}>
-                    <Link to="/admin" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 10, fontFamily: '"Jost", sans-serif', fontWeight: 500, fontSize: '0.9rem', color: '#A88440', textDecoration: 'none' }}>
-                      <FiShield size={14} /> Панель администратора
-                    </Link>
-                  </motion.div>
-                )}
               </div>
 
-              {/* User section */}
-              <div style={{ borderTop: '1px solid rgba(201,165,85,0.08)', paddingTop: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px 14px' }}>
-                  <div style={{ padding: 2, background: 'linear-gradient(135deg, #C9A555, #836030)', borderRadius: '50%', flexShrink: 0 }}>
-                    {user.avatar
-                      ? <img src={user.avatar} alt={user.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #07070C', display: 'block' }} />
-                      : <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #0F0F18, #1A1A28)', border: '2px solid #07070C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Jost"', fontSize: '0.72rem', fontWeight: 700, color: '#C9A555' }}>{getInitials(user.name)}</div>
-                    }
-                  </div>
-                  <div>
-                    <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 600, fontSize: '0.88rem', color: '#EDE0C4', margin: 0 }}>{user.name}</p>
-                    <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 300, fontSize: '0.72rem', color: '#3A3840', margin: '2px 0 0' }}>{user.email}</p>
-                  </div>
-                </div>
-                <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 10, fontFamily: '"Jost", sans-serif', fontSize: '0.85rem', color: '#6B6570', textDecoration: 'none' }}>
-                  <FiUser size={14} /> Мой профиль
+              {/* Settings & logout */}
+              <div style={{ borderTop: '1px solid rgba(201,165,85,0.08)', marginTop: 8, paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', borderRadius: 10, fontFamily: '"Jost", sans-serif', fontSize: '0.88rem', color: '#6B6570', textDecoration: 'none' }}>
+                  <FiUser size={14} /> Настройки профиля
                 </Link>
-                <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 16px', borderRadius: 10, fontFamily: '"Jost", sans-serif', fontSize: '0.85rem', color: '#6B4040', cursor: 'pointer', background: 'none', border: 'none' }}>
+                <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '13px 16px', borderRadius: 10, fontFamily: '"Jost", sans-serif', fontSize: '0.88rem', color: '#7A4040', cursor: 'pointer', background: 'none', border: 'none', textAlign: 'left' }}>
                   <FiLogOut size={14} /> Выйти из аккаунта
                 </button>
               </div>

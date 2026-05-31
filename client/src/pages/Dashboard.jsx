@@ -690,7 +690,7 @@ export default function Dashboard() {
               <ActionCard to="/graduates" emoji="👥" title="Выпускники" subtitle="Найдите одноклассников"   accent="#A78BFA" delay={0.65} />
               <ActionCard to="/awards"    emoji="🏆" title="Награды"    subtitle="Проголосуйте за лучших"   accent="#34D399" delay={0.70} />
               <ActionCard to="/timeline"  emoji="📖" title="Хроника"    subtitle="История нашего класса"    accent="#FB7185" delay={0.75} />
-              <ActionCard to="/profile"   emoji="🌟" title="Профиль"    subtitle="Ваша страница выпускника" accent="#FBBF24" delay={0.80} />
+              <ActionCard to={`/graduates/${user?._id || user?.id}`} emoji="🌟" title="Профиль" subtitle="Ваша страница выпускника" accent="#FBBF24" delay={0.80} />
             </div>
           </motion.div>
 

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import { motion, useInView, useMotionValue, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import ParticlesBackground from '../components/ParticlesBackground.jsx';
 import Footer from '../components/Footer.jsx';
@@ -424,6 +425,7 @@ function FeatureCard({ numeral, title, description, index }) {
 
 /* ══════════════════ MAIN ══════════════════ */
 export default function Landing() {
+  const { user } = useAuth();
   const heroRef   = useRef(null);
   const heroHoverRef = useRef(false);
   const mousePosRef  = useRef({ x: -999, y: -999 });
@@ -627,8 +629,14 @@ export default function Landing() {
             transition={{ duration: 0.9, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
             style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}
           >
-            <Link to="/login" className="btn-gold-solid">Войти</Link>
-            <Link to="/register" className="btn-gold-outline">Регистрация</Link>
+            {user ? (
+              <Link to="/dashboard" className="btn-gold-solid">В личный кабинет →</Link>
+            ) : (
+              <>
+                <Link to="/login" className="btn-gold-solid">Войти</Link>
+                <Link to="/register" className="btn-gold-outline">Регистрация</Link>
+              </>
+            )}
           </motion.div>
         </div>
 
@@ -804,7 +812,10 @@ export default function Landing() {
             Делитесь воспоминаниями, смотрите фото<br />
             и оставайтесь на связи с одноклассниками.
           </p>
-          <Link to="/register" className="btn-gold-solid">Зарегистрироваться</Link>
+          {user
+            ? <Link to="/dashboard" className="btn-gold-solid">В личный кабинет →</Link>
+            : <Link to="/register" className="btn-gold-solid">Зарегистрироваться</Link>
+          }
         </motion.div>
       </section>
 
