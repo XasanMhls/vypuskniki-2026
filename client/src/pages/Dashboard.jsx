@@ -2,11 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   motion, useMotionValue, useTransform, useSpring,
-  AnimatePresence,
 } from 'framer-motion';
 import {
-  FiUsers, FiAward, FiClock, FiArrowRight,
-  FiBookOpen, FiStar, FiFeather, FiImage, FiHeart,
+  FiUsers, FiAward, FiArrowRight,
+  FiBookOpen, FiStar, FiFeather, FiImage,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext.jsx';
 import api from '../lib/api.js';
@@ -153,87 +152,21 @@ function PageLoader() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   Flip digit for countdown
+   Post-graduation memorial card
    ───────────────────────────────────────────────────────── */
-function FlipDigit({ value }) {
-  const str = String(value).padStart(2, '0');
-  return (
-    <div style={{ position: 'relative', display: 'inline-flex', flexDirection: 'column' }}>
-      <AnimatePresence mode="popLayout">
-        <motion.span
-          key={str}
-          initial={{ y: -20, opacity: 0, rotateX: -90 }}
-          animate={{ y: 0, opacity: 1, rotateX: 0 }}
-          exit={{ y: 20, opacity: 0, rotateX: 90 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            display: 'block',
-            fontFamily: '"Cormorant Garamond", serif',
-            fontStyle: 'italic',
-            fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
-            fontWeight: 300,
-            color: '#C9A555',
-            lineHeight: 1,
-            transformOrigin: 'center',
-          }}
-        >
-          {str}
-        </motion.span>
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────
-   Graduation countdown
-   ───────────────────────────────────────────────────────── */
-function GraduationCountdown() {
-  const GRADUATION = new Date('2026-06-25T10:00:00');
-  const [now, setNow] = useState(new Date());
-
+function GraduationMemorial() {
+  const [tick, setTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
+    const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const diff = GRADUATION.getTime() - now.getTime();
+  // Days of the last school year together (Sept 1 → now)
+  const schoolStart = new Date('2025-09-01');
+  const daysTogetherMs = Date.now() - schoolStart.getTime();
+  const daysTogether = Math.floor(daysTogetherMs / (1000 * 60 * 60 * 24));
 
-  if (diff <= 0) {
-    return (
-      <Card3D intensity={6} style={{ borderRadius: 20 }}>
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(201,165,85,0.12), rgba(201,165,85,0.04))',
-          border: '1px solid rgba(201,165,85,0.25)',
-          borderRadius: 20, padding: '2rem',
-          backdropFilter: 'blur(20px)',
-          textAlign: 'center',
-        }}>
-          <motion.span
-            animate={{ rotate: [0, -15, 15, -10, 0], scale: [1, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 2.5 }}
-            style={{ fontSize: '3rem', display: 'block', marginBottom: '1rem' }}
-          >🎓</motion.span>
-          <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', fontSize: '1.6rem', color: '#EDE0C4', marginBottom: 8 }}>
-            Мы выпустились!
-          </h3>
-          <p style={{ fontFamily: '"Jost", sans-serif', fontSize: '0.8rem', color: '#6B6570', letterSpacing: '0.05em' }}>
-            Новая глава уже началась
-          </p>
-        </div>
-      </Card3D>
-    );
-  }
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  const seconds = Math.floor((diff / 1000) % 60);
-  const units = [
-    { value: days, label: 'Дней' },
-    { value: hours, label: 'Часов' },
-    { value: minutes, label: 'Минут' },
-    { value: seconds, label: 'Секунд' },
-  ];
+  const stars = ['★', '✦', '◆', '✧', '★'];
 
   return (
     <motion.div
@@ -241,41 +174,80 @@ function GraduationCountdown() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
     >
-      <Card3D intensity={5} style={{ borderRadius: 20 }}>
+      <Card3D intensity={6} style={{ borderRadius: 20 }}>
         <div style={{
-          background: 'linear-gradient(135deg, rgba(201,165,85,0.08), rgba(7,7,12,0.8))',
-          border: '1px solid rgba(201,165,85,0.2)',
+          background: 'linear-gradient(135deg, rgba(201,165,85,0.10) 0%, rgba(7,7,12,0.9) 60%)',
+          border: '1px solid rgba(201,165,85,0.25)',
           borderRadius: 20, padding: '1.75rem',
           backdropFilter: 'blur(24px)',
           position: 'relative', overflow: 'hidden',
+          textAlign: 'center',
         }}>
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-            background: 'linear-gradient(to right, transparent, rgba(201,165,85,0.5), transparent)',
-          }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1.25rem' }}>
-            <FiClock style={{ color: '#C9A555', width: 14, height: 14 }} />
-            <span style={{ fontFamily: '"Jost", sans-serif', fontWeight: 600, fontSize: '0.62rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#C9A555' }}>
-              До выпускного
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {units.map((u) => (
-              <div key={u.label} style={{ textAlign: 'center' }}>
-                <div style={{
-                  background: 'rgba(201,165,85,0.06)',
-                  border: '1px solid rgba(201,165,85,0.12)',
-                  borderRadius: 12, padding: '0.75rem 0.25rem 0.6rem',
-                  marginBottom: 6,
-                  backdropFilter: 'blur(8px)',
-                }}>
-                  <FlipDigit value={u.value} />
-                </div>
-                <p style={{ fontFamily: '"Jost", sans-serif', fontSize: '0.58rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#3A3840' }}>
-                  {u.label}
-                </p>
-              </div>
+          {/* Top shimmer */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(201,165,85,0.6), transparent)' }} />
+          {/* Corner radial glow */}
+          <div style={{ position: 'absolute', bottom: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,165,85,0.08) 0%, transparent 70%)', filter: 'blur(20px)' }} />
+
+          {/* Rotating stars row */}
+          <motion.div
+            animate={{ opacity: [0.3, 0.7, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: '1rem' }}
+          >
+            {stars.map((s, i) => (
+              <motion.span
+                key={i}
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: i * 0.3, ease: 'easeInOut' }}
+                style={{ fontSize: '0.55rem', color: i === 2 ? '#C9A555' : 'rgba(201,165,85,0.35)' }}
+              >
+                {s}
+              </motion.span>
             ))}
+          </motion.div>
+
+          {/* Eyebrow */}
+          <p style={{ fontFamily: '"Jost", sans-serif', fontWeight: 600, fontSize: '0.58rem', letterSpacing: '0.35em', textTransform: 'uppercase', color: 'rgba(201,165,85,0.5)', marginBottom: '0.75rem' }}>
+            Выпуск · 11 Г · 2026
+          </p>
+
+          {/* Big year */}
+          <motion.p
+            animate={{ backgroundPosition: ['0% center', '100% center', '0% center'] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              fontFamily: '"Cormorant Garamond", serif',
+              fontStyle: 'italic',
+              fontWeight: 300,
+              fontSize: 'clamp(3.5rem, 8vw, 5rem)',
+              lineHeight: 1,
+              margin: '0 0 0.5rem',
+              background: 'linear-gradient(105deg, #C4B08A 0%, #EDE0C4 35%, #FFFBF0 50%, #E2C87A 65%, #C9A555 100%)',
+              backgroundSize: '200% 100%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            2026
+          </motion.p>
+
+          {/* Tagline */}
+          <p style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', fontSize: '1rem', color: 'rgba(237,224,196,0.7)', marginBottom: '1.25rem', lineHeight: 1.4 }}>
+            Школа позади —<br />будущее впереди
+          </p>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(201,165,85,0.25), transparent)', margin: '0 auto 1.1rem', maxWidth: 160 }} />
+
+          {/* Days together stat */}
+          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4, background: 'rgba(201,165,85,0.06)', border: '1px solid rgba(201,165,85,0.12)', borderRadius: 12, padding: '0.65rem 1.25rem' }}>
+            <span style={{ fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', fontSize: '1.6rem', fontWeight: 300, color: '#C9A555', lineHeight: 1 }}>
+              {daysTogether}
+            </span>
+            <span style={{ fontFamily: '"Jost", sans-serif', fontSize: '0.55rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(201,165,85,0.45)' }}>
+              дней вместе
+            </span>
           </div>
         </div>
       </Card3D>
@@ -651,7 +623,7 @@ export default function Dashboard() {
 
             {/* Right column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <GraduationCountdown />
+              <GraduationMemorial />
 
               {/* Links card */}
               <motion.div
